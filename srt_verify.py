@@ -234,7 +234,7 @@ class SRTFile:
             # Parse the entry ID line
             line_number: int = i + 1
             id: int
-            if "-->" in l:
+            if "-->" in l or "→" in l:
                 if not fix_errors:
                     raise ValueError(
                         f"Expected integer entry ID at line {line_number}, got: {lines[i]!r}"
@@ -265,9 +265,15 @@ class SRTFile:
             # Parse the time range
             l = lines[i].strip()
             if "-->" not in l:
-                raise ValueError(
-                    f"Expected time range at line {i+1}, got: {lines[i]!r}"
-                )
+                if "→" in l and fix_errors:
+                    l = l.replace("→", "-->")
+                    warnings.append(
+                        f"Replaced '→' with '-->' at line {i+1}."
+                    )
+                else:
+                    raise ValueError(
+                        f"Expected time range at line {i+1}, got: {lines[i]!r}"
+                    )
             time_range: List[str] = l.split(" --> ")
             start_time: SRTTime = SRTTime.parse(time_range[0].strip())
             end_time: SRTTime = SRTTime.parse(time_range[1].strip())
@@ -377,7 +383,7 @@ def main() -> None:
             print(error, file=sys.stderr)
 
     # Print the SRT contents
-    if args.fix:
+    if args.fix or args.renumber:
         print("Fixed SRT contents:", file=sys.stderr)
         print(srt)
 
